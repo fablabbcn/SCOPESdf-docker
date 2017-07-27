@@ -1,0 +1,46 @@
+# service configuration for Postgres
+db:
+  image: mdillon/postgis
+  # use the preferred version of the official Postgres image
+  # see https://hub.docker.com/_/postgres/
+  # persist the database between containers by storing it in a volume
+  restart: unless-stopped
+  volumes:
+    - oraganicityapi-postgres:/var/lib/postgresql/data
+
+# service configuration for our dockerized Rails app
+app:
+  # use the Dockerfile next to this file
+  build: .
+  dockerfile: SCOPESdf/Dockerfile
+  # sources environment variable configuration for our app
+  env_file: .env
+  # rely on the RAILS_ENV value of the host machine
+  volumes:
+    - ./SCOPESdf:/SCOPESdf
+    - ./SCOPESdf/tmp:/tmp
+    - ./scripts:/scripts
+    - ./config:/config
+  # makes the app container aware of the DB container
+  links:
+    - db
+  restart: unless-stopped
+  # expose the port we configured Puma to bind to (should expose only internally)
+  ports:
+    - "3000:3000"
+  command: bash -c "/scripts/startup.sh"
+
+
+# service configuration for our web server
+web:
+  image: steveltn/https-portal:1
+  links:
+    - app
+  env_file: .env
+  environment:
+    DOMAINS: 'scopes.fabfoundation.com -> http://app:3000'
+    STAGE: local # Set this on local for using self-signed certificate
+  restart: unless-stopped
+  ports:
+    - 80:80
+    - 443:443

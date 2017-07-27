@@ -1,0 +1,4 @@
+[submodule "SCOPESdf"]
+	path = SCOPESdf
+	url = https://github.com/fablabbcn/SCOPESdf.git
+	branch = docker
